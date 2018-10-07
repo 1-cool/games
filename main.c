@@ -1,7 +1,7 @@
 #include<stdio.h>
-int main()
+#include<stdlib.h>
+int move(int x,int y)
 {
-	int x=25,y=8;
 	for(int i=0;i<=y;i++)
 	{
 		printf("\n");
@@ -16,9 +16,19 @@ int main()
 		printf(" ");
 	}
 	printf(" *****\n");
+
 	for(int i=0;i<x;i++)
+
 	{
 		printf(" ");
 	}
 	printf("  * *\n");
+}
+
+int main()
+{
+	//while(1)
+	{
+		move(20,6);
+	}
 }
