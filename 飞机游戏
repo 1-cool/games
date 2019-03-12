@@ -45,23 +45,23 @@ int main()
 		system("cls");
 		draw();
 		input = _getch();
-		if (input == 'w')
+		if (input == 'w')		//飞机上移
 		{
 			y--;
 		}
-		if (input == 'a')
+		if (input == 'a')		//飞机左移
 		{
 			x--;
 		}
-		if (input == 's')
+		if (input == 's')		//飞机下移
 		{
 			y++;
 		}
-		if (input == 'd')
+		if (input == 'd')		//飞机右移
 		{
 			x++;
 		}
-		if (input == ' ')
+		if (input == ' ')		//飞机发射子弹
 		{
 			attack();
 		}
