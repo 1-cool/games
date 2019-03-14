@@ -9,7 +9,7 @@ int main()
 	int v = 1;				//小球的速度
 	while (top <= bottom)
 	{
-		y += v;
+		y += v;				//移动小球位置
 		system("cls");
 		for (int i = 0; i < y; i++)			//绘制小球前的空行
 			printf("\n");
@@ -18,7 +18,7 @@ int main()
 		printf("O\n");					//绘制小球
 		if (y >= bottom)
 		{
-			top += 2;			//上界每次向下移动两行
+			top += 2;				//上界每次向下移动两行
 			v = -v;
 		}
 		if (y <= top)
