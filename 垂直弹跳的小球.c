@@ -4,7 +4,7 @@
 int main()
 {
 	int x = 25, y = 6;			//小球的起始位置
-	int	bottom = 20;			//地面的纵坐标，即小球运动的下界
+	int bottom = 20;			//地面的纵坐标，即小球运动的下界
 	int top = 6;				//球运动的上界
 	int v = 1;					//小球的速度
 	while (top <= bottom)
