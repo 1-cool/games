@@ -20,6 +20,7 @@ int main()
 		{
 			top += 2;				//上界每次向下移动两行
 			v = -v;
+			Beep(1000, 2);
 		}
 		if (y <= top)
 			v = -v;
