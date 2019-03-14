@@ -3,11 +3,11 @@
 #include<Windows.h>
 int main()
 {
-	int x = 25, y = 6;				//小球的起始位置
-	int	bottom = 20;				//地面的纵坐标，即小球运动的下界
-	int top = 6;					//球运动的上界
+	int x = 0, y = 10;				//小球的起始位置
+	int bottom = 20;				//地面的纵坐标，即小球运动的下界
+	int top = 0;					//球运动的上界
 	int left = 0;					//左边界
-	int right = 20;					//右边界
+	int right = 40;					//右边界
 	int v_x = 1;					//小球的x方向的速度
 	int v_y = 1;					//小球的y方向的速度
 	while (1)
@@ -19,7 +19,7 @@ int main()
 			printf("\n");
 		for (int i = 0; i < x; i++)
 			printf(" ");
-		printf("O\n");						//绘制小球
+		printf("O\n");					//绘制小球
 		if (y <= top || y >= bottom)
 			v_y = -v_y;
 		if (x <= left || x >= right)
