@@ -12,7 +12,7 @@ int main()
 	int v_y = 1;					//小球的y方向的速度
 	while (1)
 	{
-		x += v_x;
+		x += v_x;				//移动小球位置
 		y += v_y;
 		system("cls");
 		for (int i = 0; i < y; i++)			//绘制小球前的空行
