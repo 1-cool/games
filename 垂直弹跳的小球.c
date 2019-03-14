@@ -1,35 +1,29 @@
 #include<stdio.h>
+#include<stdlib.h>
 #include<windows.h>
-#define X 25			//球的初始横坐标
-#define Y 10			//球的初始纵坐标
 int main()
 {
-	int x = X, y = Y;
-	int	limlower = 10;				//地面的纵坐标，即小球运动的下界
-	int limup = x / 5;				//球运动的上界
-	for (; limup <= limlower; limup += limup/5)			//小球的运动的最高点减小，直到与地面相等
+	int x = 25, y = 5;			//小球的起始位置
+	int	bottom = 20;			//地面的纵坐标，即小球运动的下界
+	int top = 4;				//球运动的上界
+	int v = 1;					//小球的速度
+	while (top <= bottom)
 	{
-
-		for (; y < limlower; y++)			//控制球下降
+		y += v;
+		system("cls");
+		for (int i = 0; i < y; i++)
+			printf("\n");
+		for (int i = 0; i < x; i++)
+			printf(" ");
+		printf("O\n");
+		if (y >= bottom)
 		{
-			system("cls");
-			for (int i = 0; i < y; i++)
-				printf("\n");
-			for (int i = 0; i < x; i++)
-				printf(" ");
-			printf("O\n");
-			Sleep(5);
+			top += 2;			//上界每次向下移动两行
+			v = -v;
 		}
-
-		for (; y > limup; y--)				//控制球上升
-		{
-			system("cls");
-			for (int i = 0; i < y; i++)
-				printf("\n");
-			for (int i = 0; i < x; i++)
-				printf(" ");
-			printf("O\n");
-			Sleep(5);
-		}
+		if (y <= top)
+			v = -v;
+		Sleep(5);
 	}
+	return 0;
 }
