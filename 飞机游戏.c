@@ -2,11 +2,11 @@
 #include<stdlib.h>
 #include<conio.h>
 #include<Windows.h>
-int x, y;				//飞机位置
+int x, y;						//飞机位置
 int bullet_x, buller_y;			//子弹位置
 int enemy_x, enemy_y;			//敌机位置
-int higt, widht;			//游戏画面尺寸
-int score;				//得分
+int higt, widht;				//游戏画面尺寸
+int score;						//得分
 void HideCursor()				//隐藏光标
 {
 	CONSOLE_CURSOR_INFO cursor_info = { 1,0 };
@@ -23,7 +23,7 @@ void gotoxy(int x, int y)		//类似于清屏函数，光标移动到原点位置
 void startup()					//数据初始化
 {
 	higt = 20; widht = 30;		//设置画面尺寸
-	x = widht / 2; y = higt / 2;				//飞机初始位置
+	x = widht / 2; y = higt / 5 * 4;				//飞机初始位置
 	enemy_x = widht / 2; enemy_y = 0;	//敌机初始位置
 	score = 0;
 }
@@ -37,7 +37,7 @@ void draw()						//绘制
 			if (i == y && j == x)
 				printf("*");						//绘制飞机
 			else if (enemy_x == j && enemy_y == i)
-				printf("+");						//绘制敌机
+				printf("#");						//绘制敌机
 			else if (bullet_x == j && buller_y == i)
 				printf("|");						//绘制子弹
 			else
@@ -53,28 +53,30 @@ void update_without_input()
 {
 	if (buller_y >= 0)					//移动子弹
 		--buller_y;
-	if (buller_y == enemy_y && bullet_x == enemy_x)			//子弹击中敌机
-	{
-		++score;
-		Beep(10000, 2);
-		enemy_y = -1;					//产生新敌机
-		enemy_x = rand() % widht;
+	else								//子弹飞出画面
 		buller_y = -2;
-	}
-	if (enemy_y > higt)					//如果敌机跑出屏幕
-	{
-		enemy_y = -1;					//产生新敌机
-		enemy_x = rand() % widht;
-	}
 	/*用来控制敌机向下移动的速度。每隔几次循环，才移动一次敌机
 	这样修改的话，用户按键交互速度还是保持很快，但我们NPC的移动显示可以降速*/
 	static int speed = 0;
-	if (speed < 10)
+	if (speed < 15)
 		++speed;
 	else
 	{
 		++enemy_y;
 		speed = 0;
+	}
+	if (buller_y == enemy_y && bullet_x == enemy_x)			//子弹击中敌机
+	{
+		++score;						//增加得分
+		Beep(10000, 2);
+		enemy_y = -1;					//产生新敌机
+		enemy_x = rand() % widht;
+		buller_y = -2;					//子弹无效
+	}
+	if (enemy_y > higt)					//如果敌机跑出画面
+	{
+		enemy_y = -1;					//产生新敌机
+		enemy_x = rand() % widht;
 	}
 }
 void update_with_input()
