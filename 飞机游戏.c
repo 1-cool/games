@@ -47,7 +47,7 @@ void draw()						//绘制
 	}
 	for (int i = 0; i < widht; ++i)
 		printf("-");
-	printf("|\n得分：%d\n", score);
+	printf("+\n得分：%d\n", score);
 }
 void update_without_input()
 {
