@@ -3,12 +3,13 @@
 #include<conio.h>
 #include<Windows.h>
 #include<time.h>
-int x, y;						//飞机位置
+int x, y;				//飞机位置
 int bullet[35];			//子弹位置
 int enemy[35];			//敌机位置
-int higt, widht;				//游戏画面尺寸
-int score;						//得分
-bool game;						//游戏状态
+int higt, widht;		//游戏画面尺寸
+int score;				//得分
+int hard;				//游戏难度
+bool game;				//游戏状态
 void HideCursor()				//隐藏光标
 {
 	CONSOLE_CURSOR_INFO cursor_info = { 1,0 };
@@ -29,6 +30,7 @@ void startup()					//数据初始化
 	memset(enemy, -1, sizeof(enemy));	//敌机初始位置
 	enemy[rand() % widht] = 0;
 	score = 0;					//初始化分数
+	hard = 0;					//初始化游戏难度
 	game = 1;					//初始化游戏状态
 	for (int t = 0; t < widht; ++t)
 		bullet[t] = -2;//初始化子弹位置
@@ -63,7 +65,7 @@ void update_without_input()
 		game = 0;
 	}
 	for (int t = 0; t < widht; ++t)
-		if (bullet[t] == enemy[t])			//子弹击中敌机
+		if (bullet[t] == enemy[t])		//子弹击中敌机
 		{
 			++score;						//增加得分
 			Beep(10000, 2);
@@ -79,23 +81,26 @@ void update_without_input()
 	/*用来控制敌机向下移动的速度。每隔几次循环，才移动一次敌机
 	这样修改的话，用户按键交互速度还是保持很快，但我们NPC的移动显示可以降速*/
 	static int speed = 0;
-	for (int t = 0; t < widht; ++t)
+	if (speed < 15)
+		++speed;
+	else
 	{
-		if (enemy[t] >= 0)
-		{
-			if (speed < 15)
-				++speed;
-			else
-			{
+		for (int t = 0; t < widht; ++t)
+			if (enemy[t] >= 0)
+
 				++enemy[t];
-				speed = 0;
-			}
-			if (enemy[t] > higt)					//如果敌机跑出画面
-			{
-				enemy[t] = -1;
-				enemy[rand() % widht] = 0;
-			}
+		speed = 0;
+	}
+	for (int t = 0; t < widht; ++t)
+		if (enemy[t] > higt)					//如果敌机跑出画面
+		{
+			enemy[t] = -1;
+			enemy[rand() % widht] = 0;
 		}
+	if (score - 10 >= hard)
+	{
+		hard = score;
+		enemy[rand() % widht] = 0;
 	}
 }
 void update_with_input()
@@ -112,7 +117,7 @@ void update_with_input()
 			y++;
 		if (input == 'd' && x < widht - 1)		//飞机右移
 			x++;
-		if (input == ' ')		//飞机发射子弹
+		if (input == ' ' && bullet[x] == -2)		//飞机发射子弹
 			bullet[x] = y - 2;
 	}
 }
