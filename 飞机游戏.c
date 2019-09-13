@@ -50,28 +50,32 @@ void draw()						//绘制
 				printf("|");						//绘制子弹
 			else
 				printf(" ");
-
 		}
 		printf("|\n");
 	}
-	for (int i = 0; i < widht; ++i)
+	for (int i = 0; i < widht; ++i)			//显示分数
 		printf("-");
 	printf("+\n得分：%d\n", score);
+}
+int random()		//生成随机位置，防止覆盖之前存在的位置
+{
+	int temp = rand() % widht;
+	while (enemy[temp] >= 0)
+		temp = rand() % widht;
+	return temp;
 }
 void update_without_input()
 {
 	if (enemy[x] == y)
-	{
 		game = 0;
-	}
 	for (int t = 0; t < widht; ++t)
-		if (bullet[t] == enemy[t])		//子弹击中敌机
+		if (bullet[t] >= 0 && (bullet[t] == enemy[t] || bullet[t] + 1 == enemy[t]))		//子弹击中敌机
 		{
 			++score;						//增加得分
 			Beep(10000, 2);
 			bullet[t] = -2;				//子弹无效
 			enemy[t] = -1;
-			enemy[rand() % widht] = 0;	//产生新敌机
+			enemy[random()] = 0;	//产生新敌机
 		}
 	for (int t = 0; t < widht; ++t)
 		if (bullet[t] > 0)					//移动子弹
@@ -87,7 +91,6 @@ void update_without_input()
 	{
 		for (int t = 0; t < widht; ++t)
 			if (enemy[t] >= 0)
-
 				++enemy[t];
 		speed = 0;
 	}
@@ -95,12 +98,12 @@ void update_without_input()
 		if (enemy[t] > higt)					//如果敌机跑出画面
 		{
 			enemy[t] = -1;
-			enemy[rand() % widht] = 0;
+			enemy[random()] = 0;
 		}
-	if (score - 10 >= hard)
+	if (score <= 290 && score - 10 >= hard)				//增加难度
 	{
 		hard = score;
-		enemy[rand() % widht] = 0;
+		enemy[random()] = 0;
 	}
 }
 void update_with_input()
