@@ -4,8 +4,8 @@
 #include<Windows.h>
 #include<time.h>
 int x, y;						//飞机位置
-int bullet_x, buller_y;			//子弹位置
-int enemy_x, enemy_y;			//敌机位置
+int bullet[35];			//子弹位置
+int enemy[35];			//敌机位置
 int higt, widht;				//游戏画面尺寸
 int score;						//得分
 bool game;						//游戏状态
@@ -26,9 +26,12 @@ void startup()					//数据初始化
 {
 	higt = 20; widht = 30;		//设置画面尺寸
 	x = widht / 2; y = higt / 5 * 4;	//飞机初始位置
-	enemy_x = rand() % widht; enemy_y = 0;	//敌机初始位置
+	memset(enemy, -1, sizeof(enemy));	//敌机初始位置
+	enemy[rand() % widht] = 0;
 	score = 0;					//初始化分数
 	game = 1;					//初始化游戏状态
+	for (int t = 0; t < widht; ++t)
+		bullet[t] = -2;//初始化子弹位置
 }
 void draw()						//绘制
 {
@@ -39,12 +42,13 @@ void draw()						//绘制
 		{
 			if (i == y && j >= x - 2 && j <= x + 2 || i == y - 1 && j == x || i == y + 1 && j == x - 1 || i == y + 1 && j == x + 1)
 				printf("*");						//绘制飞机
-			else if (enemy_x == j && enemy_y == i)
+			else if (enemy[j] == i)
 				printf("#");						//绘制敌机
-			else if (bullet_x == j && buller_y == i)
+			else if (bullet[j] == i)
 				printf("|");						//绘制子弹
 			else
 				printf(" ");
+
 		}
 		printf("|\n");
 	}
@@ -54,36 +58,44 @@ void draw()						//绘制
 }
 void update_without_input()
 {
-	if (x == enemy_x && y == enemy_y)
+	if (enemy[x] == y)
 	{
 		game = 0;
 	}
-	if (buller_y == enemy_y && bullet_x == enemy_x)			//子弹击中敌机
-	{
-		++score;						//增加得分
-		Beep(10000, 2);
-		enemy_y = -1;					//产生新敌机
-		enemy_x = rand() % widht;
-		buller_y = -2;					//子弹无效
-	}
-	if (buller_y >= 0)					//移动子弹
-		--buller_y;
-	else								//子弹飞出画面
-		buller_y = -2;
+	for (int t = 0; t < widht; ++t)
+		if (bullet[t] == enemy[t])			//子弹击中敌机
+		{
+			++score;						//增加得分
+			Beep(10000, 2);
+			bullet[t] = -2;				//子弹无效
+			enemy[t] = -1;
+			enemy[rand() % widht] = 0;	//产生新敌机
+		}
+	for (int t = 0; t < widht; ++t)
+		if (bullet[t] > 0)					//移动子弹
+			--bullet[t];
+		else								//子弹飞出画面
+			bullet[t] = -2;
 	/*用来控制敌机向下移动的速度。每隔几次循环，才移动一次敌机
 	这样修改的话，用户按键交互速度还是保持很快，但我们NPC的移动显示可以降速*/
 	static int speed = 0;
-	if (speed < 15)
-		++speed;
-	else
+	for (int t = 0; t < widht; ++t)
 	{
-		++enemy_y;
-		speed = 0;
-	}
-	if (enemy_y > higt)					//如果敌机跑出画面
-	{
-		enemy_y = -1;					//产生新敌机
-		enemy_x = rand() % widht;
+		if (enemy[t] >= 0)
+		{
+			if (speed < 15)
+				++speed;
+			else
+			{
+				++enemy[t];
+				speed = 0;
+			}
+			if (enemy[t] > higt)					//如果敌机跑出画面
+			{
+				enemy[t] = -1;
+				enemy[rand() % widht] = 0;
+			}
+		}
 	}
 }
 void update_with_input()
@@ -101,10 +113,7 @@ void update_with_input()
 		if (input == 'd' && x < widht - 1)		//飞机右移
 			x++;
 		if (input == ' ')		//飞机发射子弹
-		{
-			bullet_x = x;
-			buller_y = y - 1;
-		}
+			bullet[x] = y - 2;
 	}
 }
 void gameover(int temp)
@@ -127,7 +136,7 @@ int main()
 		draw();				//绘制
 		update_without_input();				//更新与用户无关的内容
 		update_with_input();				//更新与用户有关的内容
-		gameover(game);
+		gameover(game);					//判定游戏状态
 	}
 	return 0;
 }
