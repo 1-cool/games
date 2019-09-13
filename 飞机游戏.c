@@ -2,11 +2,13 @@
 #include<stdlib.h>
 #include<conio.h>
 #include<Windows.h>
+#include<time.h>
 int x, y;						//飞机位置
 int bullet_x, buller_y;			//子弹位置
 int enemy_x, enemy_y;			//敌机位置
 int higt, widht;				//游戏画面尺寸
 int score;						//得分
+bool game;						//游戏状态
 void HideCursor()				//隐藏光标
 {
 	CONSOLE_CURSOR_INFO cursor_info = { 1,0 };
@@ -23,9 +25,10 @@ void gotoxy(int x, int y)		//类似于清屏函数，光标移动到原点位置
 void startup()					//数据初始化
 {
 	higt = 20; widht = 30;		//设置画面尺寸
-	x = widht / 2; y = higt / 5 * 4;				//飞机初始位置
-	enemy_x = widht / 2; enemy_y = 0;	//敌机初始位置
-	score = 0;
+	x = widht / 2; y = higt / 5 * 4;	//飞机初始位置
+	enemy_x = rand() % widht; enemy_y = 0;	//敌机初始位置
+	score = 0;					//初始化分数
+	game = 1;					//初始化游戏状态
 }
 void draw()						//绘制
 {
@@ -34,7 +37,7 @@ void draw()						//绘制
 	{
 		for (int j = 0; j < widht; ++j)
 		{
-			if (i == y && j == x)
+			if (i == y && j >= x - 2 && j <= x + 2 || i == y - 1 && j == x || i == y + 1 && j == x - 1 || i == y + 1 && j == x + 1)
 				printf("*");						//绘制飞机
 			else if (enemy_x == j && enemy_y == i)
 				printf("#");						//绘制敌机
@@ -51,6 +54,18 @@ void draw()						//绘制
 }
 void update_without_input()
 {
+	if (x == enemy_x && y == enemy_y)
+	{
+		game = 0;
+	}
+	if (buller_y == enemy_y && bullet_x == enemy_x)			//子弹击中敌机
+	{
+		++score;						//增加得分
+		Beep(10000, 2);
+		enemy_y = -1;					//产生新敌机
+		enemy_x = rand() % widht;
+		buller_y = -2;					//子弹无效
+	}
 	if (buller_y >= 0)					//移动子弹
 		--buller_y;
 	else								//子弹飞出画面
@@ -64,14 +79,6 @@ void update_without_input()
 	{
 		++enemy_y;
 		speed = 0;
-	}
-	if (buller_y == enemy_y && bullet_x == enemy_x)			//子弹击中敌机
-	{
-		++score;						//增加得分
-		Beep(10000, 2);
-		enemy_y = -1;					//产生新敌机
-		enemy_x = rand() % widht;
-		buller_y = -2;					//子弹无效
 	}
 	if (enemy_y > higt)					//如果敌机跑出画面
 	{
@@ -100,15 +107,27 @@ void update_with_input()
 		}
 	}
 }
+void gameover(int temp)
+{
+	if (temp)
+		return;
+	gotoxy(0, 0);
+	printf("Game Over!!!!\nPress Enter to Restart the Game");//提示游戏结束
+	while (_getch() != 13);	//回车重新开始游戏
+	startup();				//数据初始化
+	system("cls");			//清屏
+}
 int main()
 {
 	HideCursor();			//隐藏光标
 	startup();				//数据初始化
+	srand(time(NULL));		//初始化随机数种子
 	while (1)
 	{
 		draw();				//绘制
 		update_without_input();				//更新与用户无关的内容
 		update_with_input();				//更新与用户有关的内容
+		gameover(game);
 	}
 	return 0;
 }
