@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>🎮 抓娃娃 · 音效+收集区</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            margin: 0;
+            padding: 0;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, #2b2d42 0%, #1d1f2a 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 420px;
+            height: 100%;
+            max-height: 700px;
+            background: #2a2c3e;
+            border-radius: 48px 48px 32px 32px;
+            box-shadow: 0 25px 40px rgba(0,0,0,0.6), inset 0 0 0 2px #8f9bb3 inset;
+            padding: 16px 12px 20px 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .machine-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 8px 8px 8px;
+            color: #f4e9d8;
+            text-shadow: 0 2px 0 #0b0b12;
+            font-weight: bold;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .collected-canvas {
+            background: rgba(30,30,50,0.6);
+            border-radius: 16px;
+            width: 150px;
+            height: 36px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .score-box {
+            background: #1e1f2b;
+            padding: 8px 22px;
+            border-radius: 60px;
+            box-shadow: inset 0 3px 6px #0b0b12, 0 5px 0 #0f0f18;
+            color: #fddb7c;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+        }
+        .glass-panel {
+            background: #a3c4db;
+            background: linear-gradient(145deg, #b7d9f0, #8bb3cc);
+            border-radius: 32px 32px 24px 24px;
+            padding: 12px 8px 16px 8px;
+            box-shadow: inset 0 -6px 10px rgba(0,0,0,0.4), inset 0 6px 12px rgba(255,255,255,0.7), 0 10px 0 #3e4a5b;
+            border: 2px solid #c2dffa;
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+            aspect-ratio: 4 / 5;
+            background: #d5e9ff;
+            border-radius: 28px 28px 20px 20px;
+            box-shadow: inset 0 0 0 3px #6c7e99, inset 0 0 20px #284154;
+            touch-action: none;
+            margin: 0 auto;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 12px;
+            padding: 4px 2px;
+            flex-shrink: 0;
+        }
+        .ctrl-btn {
+            background: #3d3f58;
+            border: none;
+            border-bottom: 4px solid #1d1e30;
+            color: #faeecb;
+            font-size: 1.3rem;
+            font-weight: bold;
+            padding: 12px 0;
+            border-radius: 40px;
+            box-shadow: 0 6px 0 #12121c, 0 8px 12px black;
+            text-align: center;
+            flex: 1 0 80px;
+            min-width: 70px;
+            transition: all 0.05s ease;
+            touch-action: manipulation;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+        }
+        .ctrl-btn:active {
+            transform: translateY(4px);
+            border-bottom-width: 2px;
+            background: #555b7a;
+        }
+        .ctrl-btn.reset-btn {
+            background: #4f4370;
+            border-bottom-color: #2f2546;
+            flex: 1 0 100px;
+            font-size: 1.2rem;
+        }
+        .legend {
+            color: #d4c9ae;
+            text-align: center;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            text-shadow: 0 2px 2px black;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .legend span {
+            background: #1e1f2b;
+            padding: 4px 14px;
+            border-radius: 40px;
+        }
+        @media (max-width: 380px) {
+            .ctrl-btn { font-size: 1.1rem; padding: 10px 0; min-width: 65px; }
+            .legend { font-size: 0.8rem; }
+        }
+        @media (min-height: 700px) {
+            .game-container { padding: 20px 16px 25px 16px; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="machine-header">
+        <div class="header-left">
+            <span>🎉 抓娃娃</span>
+            <canvas id="collectedCanvas" class="collected-canvas" width="150" height="36"></canvas>
+        </div>
+        <div class="score-box" id="scoreDisplay">0</div>
+    </div>
+    <div class="glass-panel">
+        <canvas id="gameCanvas" width="400" height="500"></canvas>
+    </div>
+    <div class="controls">
+        <button class="ctrl-btn" id="moveLeftBtn" aria-label="左移">◀ 左移</button>
+        <button class="ctrl-btn" id="moveRightBtn" aria-label="右移">右移 ▶</button>
+        <button class="ctrl-btn" id="grabBtn" aria-label="抓取">👇 抓取</button>
+        <button class="ctrl-btn reset-btn" id="resetBtn">🔄 新娃娃</button>
+    </div>
+    <div class="legend">
+        <span>⬅️➡️ 移动 / ←→键</span>
+        <span>👇 抓取 / 空格键</span>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const collectedCanvas = document.getElementById('collectedCanvas');
+        const collectedCtx = collectedCanvas.getContext('2d');
+        const CANVAS_W = 400, CANVAS_H = 500;
+
+        // ----- 游戏状态 -----
+        let dolls = [];                       // 静态娃娃
+        let fallingDolls = [];                 // 掉落动画娃娃 { type, startX, startY, targetX, targetY, progress, duration }
+        let collectingDolls = [];               // 获得动画娃娃 { type, x, y, progress, duration }
+        let collectedDolls = [];                 // 收集展示区的娃娃 { type, progress } progress从0到1动画
+        const MAX_COLLECTED = 5;                 // 最多显示5个
+        const COLLECTED_ANIM_DURATION = 15;      // 收集展示动画帧数
+
+        let score = 0;
+        const SCORE_SPAN = document.getElementById('scoreDisplay');
+
+        // 爪子物理参数
+        const BASE_Y = 70;                  
+        let clawX = 200;                     
+        let angle = 0;                        
+        let angleVelocity = 0;                 
+        const MAX_ANGLE = 30 * Math.PI / 180;  
+
+        let ropeLength = 20;                  
+        const MIN_ROPE = 20;
+        const MAX_ROPE = 350;                  
+
+        const STATE = { IDLE: 'idle', LOWERING: 'lowering', RAISING: 'raising' };
+        let currentState = STATE.IDLE;
+        let grabSuccess = false;               // 视觉爪子闭合
+
+        // 抓取到的娃娃信息 (为null表示没抓到)
+        let grabbedDoll = null;                // { type, originalX, originalY }
+
+        const MIN_CLAW_X = 45;
+        const MAX_CLAW_X = 355;
+
+        const GRAB_THRESHOLD = 38;              // 抓取判定范围
+
+        // 动画计时
+        let time = 0;  // 用于浮动效果
+
+        // ----- 音效系统 (Web Audio API) -----
+        let audioCtx = null;
+        let audioUnlocked = false;
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            // 空函数，等待用户手势后resume
+        }
+
+        function unlockAudio() {
+            if (!audioCtx) initAudio();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().then(() => {
+                    audioUnlocked = true;
+                });
+            } else if (audioCtx && audioCtx.state === 'running') {
+                audioUnlocked = true;
+            }
+        }
+
+        function playMoveSound() {
+            if (!audioUnlocked) return;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.05);
+        }
+
+        function playGrabSuccessSound() {
+            if (!audioUnlocked) return;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playDropSound() {
+            if (!audioUnlocked) return;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.15);
+            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.15);
+        }
+
+        // ----- 娃娃绘制函数 (精美版) -----
+        function drawDoll(ctx, x, y, type, isGrabbed = false, collectProgress = null) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // 如果是被抓取的娃娃，添加外发光和浮动
+            if (isGrabbed) {
+                ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+                ctx.shadowBlur = 20;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                const floatY = Math.sin(time * 0.01) * 2;
+                ctx.translate(0, floatY);
+            } else {
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+                ctx.shadowBlur = 8;
+                ctx.shadowOffsetY = 3;
+            }
+
+            // 如果是在收集动画中，应用缩放
+            if (collectProgress !== null) {
+                const scale = 1 - collectProgress; // 从1缩小到0
+                ctx.scale(scale, scale);
+            }
+
+            if (type === 0) { // 小熊
+                const gradient = ctx.createRadialGradient(-5, -8, 5, 0, 0, 20);
+                gradient.addColorStop(0, '#b97c4b');
+                gradient.addColorStop(1, '#8b5e3c');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 18, 20, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#7a5133';
+                ctx.beginPath();
+                ctx.ellipse(-12, -18, 7, 9, -0.1, 0, Math.PI*2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(12, -18, 7, 9, 0.1, 0, Math.PI*2);
+                ctx.fill();
+                ctx.shadowBlur = 4;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(-7, -5, 4, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(7, -5, 4, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.shadowBlur = 2;
+                ctx.fillStyle = '#1e2b30';
+                ctx.beginPath();
+                ctx.arc(-6, -5, 2, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(8, -5, 2, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#442c1a';
+                ctx.beginPath();
+                ctx.arc(0, 4, 3, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#f4a7a7';
+                ctx.globalAlpha = 0.4;
+                ctx.beginPath();
+                ctx.arc(-10, 2, 3, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(10, 2, 3, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            } else if (type === 1) { // 小兔
+                const gradient = ctx.createRadialGradient(-4, -6, 5, 0, 0, 18);
+                gradient.addColorStop(0, '#f7e9d7');
+                gradient.addColorStop(1, '#ebd5b3');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.ellipse(0, 2, 16, 18, 0, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#e5c5a0';
+                ctx.beginPath();
+                ctx.ellipse(-10, -22, 6, 16, -0.1, 0, Math.PI*2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(10, -22, 6, 16, 0.1, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#f8b4b4';
+                ctx.beginPath();
+                ctx.ellipse(-10, -24, 3, 10, -0.1, 0, Math.PI*2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(10, -24, 3, 10, 0.1, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#2f2f3a';
+                ctx.beginPath();
+                ctx.arc(-7, -4, 3, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(7, -4, 3, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(-8, -6, 1, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(6, -6, 1, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#ff8899';
+                ctx.beginPath();
+                ctx.arc(0, 4, 2.5, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#ffb6c1';
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath();
+                ctx.arc(-9, 0, 3, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(9, 0, 3, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            } else { // 小猪
+                const gradient = ctx.createRadialGradient(-4, -4, 6, 0, 0, 20);
+                gradient.addColorStop(0, '#ffb7c5');
+                gradient.addColorStop(1, '#e68a9c');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 17, 18, 0, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#c95f73';
+                ctx.beginPath();
+                ctx.ellipse(-5, 6, 3, 2, 0, 0, Math.PI*2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(5, 6, 3, 2, 0, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#522b33';
+                ctx.beginPath();
+                ctx.arc(-5, 6, 1, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(5, 6, 1, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#e68a9c';
+                ctx.beginPath();
+                ctx.ellipse(-12, -13, 5, 8, -0.2, 0, Math.PI*2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(12, -13, 5, 8, 0.2, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#1b2b30';
+                ctx.beginPath();
+                ctx.arc(-7, -5, 2.8, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(7, -5, 2.8, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(-8, -7, 1, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(6, -7, 1, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#ffa5b0';
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath();
+                ctx.arc(-11, -2, 3, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(11, -2, 3, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+            ctx.restore();
+        }
+
+        // ----- 初始化娃娃 (数量8) -----
+        function initDolls(count = 8) {
+            const newDolls = [];
+            for (let i = 0; i < count; i++) {
+                let tries = 0;
+                let placed = false;
+                while (!placed && tries < 400) {
+                    const x = 55 + Math.random() * 280;
+                    const y = 300 + Math.random() * 130;
+                    let overlap = false;
+                    for (let d of newDolls) {
+                        const dx = d.x - x, dy = d.y - y;
+                        if (Math.hypot(dx, dy) < 38) { overlap = true; break; }
+                    }
+                    if (!overlap) {
+                        newDolls.push({ x, y, type: Math.floor(Math.random() * 3) });
+                        placed = true;
+                    }
+                    tries++;
+                }
+                if (!placed) {
+                    newDolls.push({ x: 70 + i * 35, y: 320 + (i % 4) * 30, type: i % 3 });
+                }
+            }
+            return newDolls;
+        }
+
+        function resetGame() {
+            dolls = initDolls(8);
+            fallingDolls = [];
+            collectingDolls = [];
+            collectedDolls = [];
+            score = 0;
+            updateScore();
+            clawX = 200;
+            angle = 0;
+            angleVelocity = 0;
+            ropeLength = MIN_ROPE;
+            currentState = STATE.IDLE;
+            grabSuccess = false;
+            grabbedDoll = null;
+        }
+
+        function updateScore() {
+            SCORE_SPAN.innerText = score;
+        }
+
+        // ----- 抓取检测 -----
+        function tryGrab() {
+            if (grabbedDoll !== null) return false;
+
+            const hookX = clawX + Math.sin(angle) * ropeLength;
+            const hookY = BASE_Y + Math.cos(angle) * ropeLength;
+
+            let closestDist = GRAB_THRESHOLD;
+            let targetIndex = -1;
+            for (let i = 0; i < dolls.length; i++) {
+                const d = dolls[i];
+                const dx = d.x - hookX;
+                const dy = d.y - hookY;
+                const dist = Math.hypot(dx, dy);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    targetIndex = i;
+                }
+            }
+            if (targetIndex !== -1) {
+                const doll = dolls[targetIndex];
+                grabbedDoll = {
+                    type: doll.type,
+                    originalX: doll.x,
+                    originalY: doll.y
+                };
+                dolls.splice(targetIndex, 1);
+                grabSuccess = true;
+                playGrabSuccessSound(); // 抓取成功音效
+                return true;
+            }
+            return false;
+        }
+
+        // ----- 检查娃娃是否掉落 -----
+        function checkDrop() {
+            if (grabbedDoll === null) return false;
+
+            let dropProbability = 0.02;
+            const swingFactor = Math.abs(angle) / MAX_ANGLE;
+            dropProbability += swingFactor * 0.08;
+
+            if (Math.random() < dropProbability) {
+                const hookX = clawX + Math.sin(angle) * ropeLength;
+                const hookY = BASE_Y + Math.cos(angle) * ropeLength;
+                const startX = hookX;
+                const startY = hookY + 15;
+
+                fallingDolls.push({
+                    type: grabbedDoll.type,
+                    startX: startX,
+                    startY: startY,
+                    targetX: grabbedDoll.originalX,
+                    targetY: grabbedDoll.originalY,
+                    progress: 0,
+                    duration: 20
+                });
+
+                grabbedDoll = null;
+                grabSuccess = false;
+                playDropSound(); // 掉落音效
+                return true;
+            }
+            return false;
+        }
+
+        // ----- 物理更新 -----
+        function updatePhysics() {
+            angleVelocity *= 0.97;
+            angleVelocity -= angle * 0.06;
+            angle += angleVelocity;
+            if (angle > MAX_ANGLE) {
+                angle = MAX_ANGLE;
+                angleVelocity *= -0.2;
+            } else if (angle < -MAX_ANGLE) {
+                angle = -MAX_ANGLE;
+                angleVelocity *= -0.2;
+            }
+        }
+
+        // ----- 更新掉落动画 -----
+        function updateFallingDolls() {
+            for (let i = fallingDolls.length - 1; i >= 0; i--) {
+                const fd = fallingDolls[i];
+                fd.progress += 1 / fd.duration;
+                if (fd.progress >= 1) {
+                    dolls.push({
+                        type: fd.type,
+                        x: fd.targetX,
+                        y: fd.targetY
+                    });
+                    fallingDolls.splice(i, 1);
+                }
+            }
+        }
+
+        // ----- 更新获得动画 -----
+        function updateCollectingDolls() {
+            for (let i = collectingDolls.length - 1; i >= 0; i--) {
+                const cd = collectingDolls[i];
+                cd.progress += 1 / cd.duration;
+                if (cd.progress >= 1) {
+                    // 动画结束，真正增加分数
+                    score++;
+                    updateScore();
+                    // 将娃娃加入收集展示区 (带出现动画)
+                    collectedDolls.push({ type: cd.type, progress: 0 });
+                    collectingDolls.splice(i, 1);
+                    // 补充娃娃
+                    if (dolls.length < 4) {
+                        const extra = initDolls(4 - dolls.length);
+                        dolls = dolls.concat(extra);
+                    }
+                }
+            }
+        }
+
+        // ----- 更新收集展示区动画 -----
+        function updateCollectedAnimation() {
+            for (let i = 0; i < collectedDolls.length; i++) {
+                const cd = collectedDolls[i];
+                if (cd.progress < 1) {
+                    cd.progress += 1 / COLLECTED_ANIM_DURATION;
+                    if (cd.progress > 1) cd.progress = 1;
+                }
+            }
+            // 保留最近MAX_COLLECTED个
+            if (collectedDolls.length > MAX_COLLECTED) {
+                collectedDolls.splice(0, collectedDolls.length - MAX_COLLECTED);
+            }
+            // 重绘收集区canvas
+            drawCollectedCanvas();
+        }
+
+        // 绘制收集区canvas
+        function drawCollectedCanvas() {
+            collectedCtx.clearRect(0, 0, 150, 36);
+            collectedCtx.fillStyle = 'rgba(30,30,50,0.6)';
+            collectedCtx.fillRect(0, 0, 150, 36);
+            for (let i = 0; i < collectedDolls.length; i++) {
+                const cd = collectedDolls[i];
+                const x = 15 + i * 30;
+                const y = 18;
+                collectedCtx.save();
+                collectedCtx.translate(x, y);
+                const scale = 0.2 + 0.1 * cd.progress;
+                collectedCtx.scale(scale, scale);
+                // 使用辅助函数绘制小娃娃（简化版，复用drawDoll但需传入不同context）
+                drawDoll(collectedCtx, 0, 0, cd.type, false, null);
+                collectedCtx.restore();
+            }
+        }
+
+        // ----- 状态机更新 -----
+        function updateState() {
+            if (currentState === STATE.LOWERING) {
+                ropeLength += 4;
+                if (ropeLength > MAX_ROPE) ropeLength = MAX_ROPE;
+
+                const grabbed = tryGrab();
+                if (grabbed) {
+                    currentState = STATE.RAISING;
+                } else if (ropeLength >= MAX_ROPE) {
+                    currentState = STATE.RAISING;
+                }
+            } else if (currentState === STATE.RAISING) {
+                if (grabbedDoll !== null) {
+                    checkDrop();
+                }
+
+                ropeLength -= 3;
+                if (ropeLength <= MIN_ROPE) {
+                    ropeLength = MIN_ROPE;
+
+                    // 如果到顶时还抓着娃娃，触发获得动画
+                    if (grabbedDoll !== null) {
+                        const hookX = clawX + Math.sin(angle) * ropeLength;
+                        const hookY = BASE_Y + Math.cos(angle) * ropeLength;
+                        collectingDolls.push({
+                            type: grabbedDoll.type,
+                            x: hookX,
+                            y: hookY + 15,
+                            progress: 0,
+                            duration: 15
+                        });
+                        grabbedDoll = null;
+                        grabSuccess = false;
+                    }
+
+                    currentState = STATE.IDLE;
+                    grabSuccess = false;
+                }
+            }
+        }
+
+        // ----- 绘制主画布 -----
+        function drawCanvas() {
+            time++;
+            ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+            // 地毯
+            ctx.fillStyle = '#d2b48c';
+            ctx.beginPath();
+            ctx.rect(0, 280, CANVAS_W, 220);
+            ctx.fill();
+            ctx.fillStyle = '#b89a7a';
+            for (let i = 0; i < 12; i++) {
+                ctx.fillRect(i * 35, 290, 18, 4);
+            }
+
+            // 静态娃娃
+            for (let doll of dolls) {
+                drawDoll(ctx, doll.x, doll.y, doll.type, false);
+            }
+
+            // 掉落动画娃娃
+            for (let fd of fallingDolls) {
+                const t = fd.progress;
+                const x = fd.startX * (1 - t) + fd.targetX * t;
+                const y = fd.startY * (1 - t) + fd.targetY * t;
+                drawDoll(ctx, x, y, fd.type, false);
+            }
+
+            // 获得动画娃娃 (正在缩小消失)
+            for (let cd of collectingDolls) {
+                drawDoll(ctx, cd.x, cd.y, cd.type, false, cd.progress);
+                // 绘制 +1 文字
+                ctx.save();
+                ctx.font = 'bold 24px "Segoe UI", sans-serif';
+                ctx.fillStyle = '#ffd966';
+                ctx.shadowColor = '#b87c00';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+                ctx.fillText('+1', cd.x - 25, cd.y - 30);
+                ctx.restore();
+            }
+
+            // 爪子系统
+            ctx.save();
+
+            // 横梁
+            ctx.shadowColor = '#3d3f5e';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetY = 3;
+            ctx.fillStyle = '#69759e';
+            ctx.beginPath();
+            ctx.rect(20, 45, CANVAS_W - 40, 10);
+            ctx.fill();
+            ctx.fillStyle = '#505d86';
+            ctx.beginPath();
+            ctx.rect(30, 38, CANVAS_W - 60, 12);
+            ctx.fill();
+
+            // 滑块
+            ctx.fillStyle = '#3e4255';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.ellipse(clawX, BASE_Y - 5, 14, 10, 0, 0, 2*Math.PI);
+            ctx.fill();
+
+            const hookX = clawX + Math.sin(angle) * ropeLength;
+            const hookY = BASE_Y + Math.cos(angle) * ropeLength;
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#acaec9';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([4, 2]);
+            ctx.moveTo(clawX, BASE_Y - 2);
+            ctx.lineTo(hookX, hookY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#5f6b8f';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.ellipse(hookX, hookY - 3, 9, 7, 0, 0, 2*Math.PI);
+            ctx.fill();
+
+            const isClosed = grabSuccess || (grabbedDoll !== null);
+            ctx.fillStyle = '#ccd6f0';
+            ctx.shadowBlur = 8;
+
+            const clawAngles = [-0.5, 0, 0.5];
+            for (let i = 0; i < 3; i++) {
+                let offset = clawAngles[i];
+                if (isClosed) {
+                    offset *= 0.3;
+                } else {
+                    offset *= 1.2;
+                }
+                const toothAngle = angle + offset;
+                const toothLen = 17;
+                const tipX = hookX + Math.sin(toothAngle) * toothLen;
+                const tipY = hookY + Math.cos(toothAngle) * toothLen;
+
+                ctx.beginPath();
+                ctx.moveTo(hookX, hookY);
+                ctx.lineTo(tipX, tipY);
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = '#a7b6da';
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(tipX, tipY, 4, 0, 2*Math.PI);
+                ctx.fillStyle = '#d9e2ff';
+                ctx.fill();
+            }
+
+            ctx.beginPath();
+            ctx.arc(hookX, hookY, 6, 0, 2*Math.PI);
+            ctx.fillStyle = '#ffcf9a';
+            ctx.shadowColor = '#fbc97f';
+            ctx.fill();
+
+            ctx.restore();
+
+            // 如果爪子上有娃娃，绘制在爪子尖端下方
+            if (grabbedDoll !== null) {
+                const hookX = clawX + Math.sin(angle) * ropeLength;
+                const hookY = BASE_Y + Math.cos(angle) * ropeLength;
+                drawDoll(ctx, hookX, hookY + 15, grabbedDoll.type, true);
+            }
+
+            // 玻璃高光
+            ctx.save();
+            ctx.globalAlpha = 0.1;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.rect(30, 70, 340, 360);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // ----- 按钮事件 (包含音效解锁) -----
+        function isIdle() { return currentState === STATE.IDLE; }
+
+        function handleMoveLeft() {
+            unlockAudio();
+            if (!isIdle()) return;
+            const oldX = clawX;
+            clawX = Math.max(MIN_CLAW_X, clawX - 10);
+            if (clawX !== oldX) {
+                angleVelocity -= 0.035;
+            } else {
+                angleVelocity -= 0.01;
+            }
+            playMoveSound();
+        }
+
+        function handleMoveRight() {
+            unlockAudio();
+            if (!isIdle()) return;
+            const oldX = clawX;
+            clawX = Math.min(MAX_CLAW_X, clawX + 10);
+            if (clawX !== oldX) {
+                angleVelocity += 0.035;
+            } else {
+                angleVelocity += 0.01;
+            }
+            playMoveSound();
+        }
+
+        function handleGrab() {
+            unlockAudio();
+            if (!isIdle()) return;
+            if (ropeLength > MIN_ROPE + 2) ropeLength = MIN_ROPE;
+            currentState = STATE.LOWERING;
+            grabSuccess = false;
+        }
+
+        function handleReset() {
+            unlockAudio();
+            resetGame();
+        }
+
+        document.getElementById('moveLeftBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            handleMoveLeft();
+        });
+
+        document.getElementById('moveRightBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            handleMoveRight();
+        });
+
+        document.getElementById('grabBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            handleGrab();
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            handleReset();
+        });
+
+        // 键盘控制
+        function handleKeyDown(e) {
+            const key = e.key;
+            if (key === ' ' || key === 'Spacebar' || key === 'Space' ||
+                key === 'ArrowLeft' || key === 'ArrowRight') {
+                e.preventDefault();
+            }
+
+            if (!isIdle()) return;
+
+            if (key === 'ArrowLeft') {
+                handleMoveLeft();
+            } else if (key === 'ArrowRight') {
+                handleMoveRight();
+            } else if (key === ' ' || key === 'Spacebar' || key === 'Space') {
+                handleGrab();
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        // 启动
+        resetGame();
+        drawCollectedCanvas(); // 初始绘制收集区
+
+        function gameLoop() {
+            updatePhysics();
+            updateState();
+            updateFallingDolls();
+            updateCollectingDolls();
+            updateCollectedAnimation();  // 更新收集展示区动画
+            drawCanvas();
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+
+        // 预初始化音频（但不自动播放）
+        initAudio();
+
+    })();
+</script>
+</body>
+</html>
