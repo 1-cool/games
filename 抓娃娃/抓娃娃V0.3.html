@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>🎮 梦幻抓娃娃机 - 罗小黑战记版</title>
+    <style>
+        /* ==========================================
+           1. 基础重置与响应式满屏布局
+           ========================================== */
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation; /* 防止双击缩放 */
+            margin: 0;
+            padding: 0;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            /* 梦幻星空渐变背景 */
+            background: linear-gradient(135deg, #1a1c2c 0%, #4a235a 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', "Microsoft YaHei", sans-serif;
+            padding: 15px;
+            overflow: hidden; /* 防止窗口出现滚动条 */
+        }
+
+        /* ==========================================
+           2. 抓娃娃机主体框架 (自适应缩放)
+           ========================================== */
+        .game-container {
+            width: 100%;
+            height: 100%;
+            /* 桌面端最大宽度限制，防止变成极其夸张的带鱼屏 */
+            max-width: 1000px; 
+            /* 娃娃机外壳：粉色渐变 */
+            background: linear-gradient(180deg, #ff9a9e 0%, #fecfef 100%);
+            border-radius: 40px;
+            border: 6px solid #fff;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6), inset 0 0 15px rgba(255,255,255,0.8);
+            padding: 16px 12px 20px 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部记分牌与收集区 */
+        .machine-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 20px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.8);
+            color: #ff4757;
+            font-weight: bold;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .collected-canvas {
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 12px;
+            width: 150px;
+            height: 36px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .score-box {
+            background: #ff4757;
+            padding: 4px 18px;
+            border-radius: 60px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 3px 0 #c23616;
+            color: #fff;
+            font-size: 1.6rem;
+            letter-spacing: 1px;
+        }
+
+        /* ==========================================
+           3. 游戏显示区域（玻璃面板与动态画布）
+           ========================================== */
+        .glass-panel {
+            background: linear-gradient(145deg, #e0c3fc, #8ec5fc);
+            border-radius: 24px;
+            padding: 10px;
+            box-shadow: inset 0 0 25px rgba(255,255,255,0.6), 0 8px 0 #d1a5e1;
+            border: 4px solid #fff;
+            /* 弹性伸缩，占据所有剩余屏幕高度 */
+            flex: 1 1 auto; 
+            min-height: 0; 
+            display: flex;
+            flex-direction: column;
+        }
+        /* 用于准确定位 Canvas 大小的包裹器 */
+        .canvas-wrapper {
+            flex: 1;
+            width: 100%;
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        canvas#gameCanvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+
+        /* ==========================================
+           4. 底部操作按键面板
+           ========================================== */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 16px;
+            padding: 4px 2px;
+            flex-shrink: 0;
+        }
+        .ctrl-btn {
+            background: linear-gradient(145deg, #ff758c 0%, #ff7eb3 100%);
+            border: none;
+            border-bottom: 6px solid #d85070;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 12px 0;
+            border-radius: 40px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            text-align: center;
+            flex: 1 0 75px;
+            min-width: 70px;
+            transition: all 0.1s ease;
+            cursor: pointer;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .ctrl-btn:active {
+            transform: translateY(4px);
+            border-bottom-width: 2px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            background: #ff758c;
+        }
+        .ctrl-btn.reset-btn {
+            background: linear-gradient(145deg, #4facfe 0%, #00f2fe 100%);
+            border-bottom-color: #00a4ce;
+            flex: 1 0 100px;
+            font-size: 1.1rem;
+        }
+        
+        .legend {
+            color: #fff;
+            text-align: center;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .legend span {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 14px;
+            border-radius: 40px;
+        }
+
+        /* 针对超小屏幕手机的极限适配 */
+        @media (max-width: 400px) {
+            html, body { padding: 6px; }
+            .game-container { border-radius: 28px; padding: 12px 8px 16px 8px;}
+            .ctrl-btn { font-size: 1rem; padding: 10px 0; min-width: 60px; }
+            .legend { font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="machine-header">
+        <div class="header-left">
+            <span>🎁</span>
+            <canvas id="collectedCanvas" class="collected-canvas" width="150" height="36"></canvas>
+        </div>
+        <div class="score-box" id="scoreDisplay">0</div>
+    </div>
+    
+    <div class="glass-panel">
+        <div class="canvas-wrapper">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <!-- 为了支持宽屏，现在支持长按连续移动！ -->
+        <button class="ctrl-btn" id="moveLeftBtn" aria-label="左移">◀ 左移</button>
+        <button class="ctrl-btn" id="moveRightBtn" aria-label="右移">右移 ▶</button>
+        <button class="ctrl-btn" id="grabBtn" aria-label="抓取">👇 抓取</button>
+        <button class="ctrl-btn reset-btn" id="resetBtn">🔄 补货</button>
+    </div>
+    
+    <div class="legend">
+        <span>⬅️➡️ 长按移动 / 方向键</span>
+        <span>👇 点击抓取 / 空格键</span>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ==========================================
+        // 1. 全局与动态自适应变量
+        // ==========================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const collectedCanvas = document.getElementById('collectedCanvas');
+        const collectedCtx = collectedCanvas.getContext('2d');
+        
+        // 动态宽高，会根据设备屏幕自动改变
+        let CANVAS_W = 0, CANVAS_H = 0; 
+        
+        let dolls = [];
+        let fallingDolls = [];
+        let collectingDolls = [];
+        let collectedDolls = [];
+        const MAX_COLLECTED = 5;
+        const COLLECTED_ANIM_DURATION = 15;
+
+        let score = 0;
+        const SCORE_SPAN = document.getElementById('scoreDisplay');
+
+        // 物理坐标参数（会在屏幕自适应 resize 时动态更新）
+        const BASE_Y = 70;                     
+        let floorY = 300;                      // 动态底盘高度
+        let MIN_CLAW_X = 60;                   // 左侧洞口边界限制
+        let MAX_CLAW_X = 350;                  // 右侧玻璃边界动态限制
+        let MAX_ROPE = 350;                    // 绳子能放下的最大动态深度
+        let SPAWN_MIN_X = 130;                 // 娃娃生成最小X坐标
+        let SPAWN_MAX_X = 350;                 // 娃娃生成最大X坐标（动态更新）
+        
+        let clawX = 200;
+        let angle = 0;
+        let angleVelocity = 0;
+        const MAX_ANGLE = 30 * Math.PI / 180;
+        let ropeLength = 20;                   
+        const MIN_ROPE = 20;                   
+
+        const STATE = { IDLE: 'idle', LOWERING: 'lowering', RAISING: 'raising' };
+        let currentState = STATE.IDLE;
+        let grabSuccess = false;               
+        let grabbedDoll = null;                
+        const GRAB_THRESHOLD = 45;             
+        let time = 0;                          
+
+        // 新增：支持长按连续移动的方向状态
+        let moveDir = 0; // -1:左, 1:右, 0:停止
+
+        // ==========================================
+        // 2. 罗小黑战记角色定义
+        // ==========================================
+        const characters = [
+            { 
+                name: '小黑', 
+                body: '#1a1a1a', 
+                innerEar: '#4a9a5a',
+                eyeOuter: '#ffd84a',
+                eyeInner: '#1a1a1a',
+                nose: '#ffb6c1',
+                hasWhiskers: true,
+                size: 1.0
+            },
+            { 
+                name: '小白', 
+                body: '#fafafa', 
+                innerEar: '#ffb6c1',
+                eyeOuter: '#4a7ab8',
+                eyeInner: '#1a1a1a',
+                nose: '#ffb6c1',
+                hasWhiskers: true,
+                size: 0.95
+            },
+            { 
+                name: '无限', 
+                body: '#3a3a3a', 
+                innerEar: '#2a2a2a',
+                eyeOuter: '#87ceeb',
+                eyeInner: '#1a1a1a',
+                nose: '#d4a574',
+                hasWhiskers: false,
+                size: 1.05
+            },
+            { 
+                name: '风息', 
+                body: '#2d5a3d', 
+                innerEar: '#1a3d2a',
+                eyeOuter: '#ffd84a',
+                eyeInner: '#1a1a1a',
+                nose: '#7ab88a',
+                hasWhiskers: true,
+                size: 1.0
+            },
+            { 
+                name: '洛竹', 
+                body: '#8b6914', 
+                innerEar: '#5a4510',
+                eyeOuter: '#daa520',
+                eyeInner: '#1a1a1a',
+                nose: '#d4a574',
+                hasWhiskers: false,
+                size: 0.9
+            },
+            { 
+                name: '比丢', 
+                body: '#e8d4a8', 
+                innerEar: '#d4c090',
+                eyeOuter: '#1a1a1a',
+                eyeInner: '#1a1a1a',
+                nose: '#d4a574',
+                hasWhiskers: false,
+                size: 0.85
+            },
+            { 
+                name: '谛听', 
+                body: '#4a4a6a', 
+                innerEar: '#3a3a5a',
+                eyeOuter: '#ff6b6b',
+                eyeInner: '#1a1a1a',
+                nose: '#8a8aaa',
+                hasWhiskers: false,
+                size: 1.1
+            },
+            { 
+                name: '老君', 
+                body: '#f0e68c', 
+                innerEar: '#daa520',
+                eyeOuter: '#4a4a4a',
+                eyeInner: '#1a1a1a',
+                nose: '#d4a574',
+                hasWhiskers: false,
+                size: 0.95
+            }
+        ];
+
+        // ==========================================
+        // 3. 音效系统
+        // ==========================================
+        let audioCtx = null;
+        let audioUnlocked = false;
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function unlockAudio() {
+            if (!audioCtx) initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume().then(() => { audioUnlocked = true; });
+            } else {
+                audioUnlocked = true;
+            }
+        }
+        
+        // 点击任意位置解锁音频
+        window.addEventListener('pointerdown', unlockAudio, {once:true});
+        window.addEventListener('keydown', unlockAudio, {once:true});
+
+        function playMoveSound() {
+            if (!audioUnlocked) return;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.03, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.05);
+        }
+
+        function playGrabSuccessSound() {
+            if (!audioUnlocked) return;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playDropSound() {
+            if (!audioUnlocked) return;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.15);
+        }
+
+        // ==========================================
+        // 4. 自适应屏幕缩放引擎 (Resize Engine)
+        // ==========================================
+        function resizeCanvas() {
+            const wrapper = document.querySelector('.canvas-wrapper');
+            if (!wrapper) return;
+            const newW = wrapper.clientWidth;
+            const newH = wrapper.clientHeight;
+            if (newW === 0 || newH === 0) return;
+
+            const oldH = CANVAS_H;
+            CANVAS_W = newW;
+            CANVAS_H = newH;
+
+            // 适配视网膜高清屏幕
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = CANVAS_W * dpr;
+            canvas.height = CANVAS_H * dpr;
+            ctx.scale(dpr, dpr);
+
+            // 动态计算游戏逻辑边界
+            // 底盘固定在画布下方 160px 的位置
+            floorY = Math.max(200, CANVAS_H - 160);
+            MAX_ROPE = floorY + 60 - BASE_Y; // 增加深度，确保爪子能碰到娃娃
+            MAX_CLAW_X = CANVAS_W - 40;
+
+            // 防止爪子在屏幕缩小后卡在墙外
+            if (clawX > MAX_CLAW_X) clawX = MAX_CLAW_X;
+            if (clawX < MIN_CLAW_X) clawX = MIN_CLAW_X;
+
+            // 如果屏幕高度发生了变化（如旋转了手机），优雅地修正娃娃们的高度
+            if (oldH > 0 && oldH !== newH) {
+                const deltaY = CANVAS_H - oldH;
+                dolls.forEach(d => {
+                    d.y += deltaY;
+                    if (d.y < floorY + 10) d.y = floorY + 20 + Math.random() * 20;
+                    if (d.y > CANVAS_H - 20) d.y = CANVAS_H - 20;
+                });
+            }
+        }
+        
+        // 监听浏览器/手机旋转或缩放
+        window.addEventListener('resize', resizeCanvas);
+
+        // ==========================================
+        // 5. 绘图逻辑：绘制罗小黑战记角色
+        // ==========================================
+        function drawCharacter(ctx, x, y, size, char, isGrabbed = false, collectProgress = null, wobble = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            if (isGrabbed) {
+                ctx.shadowColor = 'rgba(255, 235, 130, 0.9)';
+                ctx.shadowBlur = 25;
+            } else {
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetY = 4;
+            }
+
+            if (collectProgress !== null) {
+                const scale = 1 - collectProgress; 
+                ctx.scale(scale, scale);
+            }
+
+            const r = size;
+            const wobbleY = Math.sin(wobble) * 1.5;
+            
+            // 阴影
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.beginPath();
+            ctx.ellipse(0, r + 3, r * 0.7, r * 0.15, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 身体
+            ctx.fillStyle = char.body;
+            ctx.beginPath();
+            ctx.ellipse(0, wobbleY, r, r * 0.85, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 耳朵 - 从头顶长出来
+            const earH = r * 0.5;
+            const earW = r * 0.3;
+            const earY = -r * 0.9 + wobbleY; // 耳朵位置在头顶上方
+            
+            // 左耳
+            ctx.fillStyle = char.body;
+            ctx.beginPath();
+            ctx.ellipse(-r * 0.45, earY, earW, earH, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 左耳内部
+            ctx.fillStyle = char.innerEar;
+            ctx.beginPath();
+            ctx.ellipse(-r * 0.45, earY, earW * 0.5, earH * 0.55, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 右耳
+            ctx.fillStyle = char.body;
+            ctx.beginPath();
+            ctx.ellipse(r * 0.45, earY, earW, earH, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 右耳内部
+            ctx.fillStyle = char.innerEar;
+            ctx.beginPath();
+            ctx.ellipse(r * 0.45, earY, earW * 0.5, earH * 0.55, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 眼睛
+            const eyeY = -r * 0.08 + wobbleY;
+            const eyeSpacing = r * 0.32;
+            const eyeW = r * 0.22;
+            const eyeH = r * 0.28;
+            
+            // 眼白
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(-eyeSpacing, eyeY, eyeW, eyeH, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(eyeSpacing, eyeY, eyeW, eyeH, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 瞳孔外圈
+            ctx.fillStyle = char.eyeOuter;
+            ctx.beginPath();
+            ctx.ellipse(-eyeSpacing, eyeY + 1, eyeW * 0.7, eyeH * 0.75, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(eyeSpacing, eyeY + 1, eyeW * 0.7, eyeH * 0.75, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 瞳孔内圈
+            ctx.fillStyle = char.eyeInner;
+            ctx.beginPath();
+            ctx.ellipse(-eyeSpacing, eyeY + 2, eyeW * 0.35, eyeH * 0.45, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(eyeSpacing, eyeY + 2, eyeW * 0.35, eyeH * 0.45, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 高光
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(-eyeSpacing - 2, eyeY - 3, eyeW * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(eyeSpacing - 2, eyeY - 3, eyeW * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 鼻子
+            ctx.fillStyle = char.nose;
+            ctx.beginPath();
+            ctx.ellipse(0, r * 0.18 + wobbleY, r * 0.08, r * 0.06, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 嘴巴
+            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(0, r * 0.28 + wobbleY, r * 0.1, 0.1, Math.PI - 0.1);
+            ctx.stroke();
+            
+            // 胡须（小黑和小白）
+            if (char.hasWhiskers) {
+                ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+                ctx.lineWidth = 0.8;
+                
+                // 左
+                ctx.beginPath();
+                ctx.moveTo(-r * 0.25, r * 0.12 + wobbleY);
+                ctx.lineTo(-r * 0.7, r * 0.05 + wobbleY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-r * 0.25, r * 0.2 + wobbleY);
+                ctx.lineTo(-r * 0.7, r * 0.22 + wobbleY);
+                ctx.stroke();
+                
+                // 右
+                ctx.beginPath();
+                ctx.moveTo(r * 0.25, r * 0.12 + wobbleY);
+                ctx.lineTo(r * 0.7, r * 0.05 + wobbleY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(r * 0.25, r * 0.2 + wobbleY);
+                ctx.lineTo(r * 0.7, r * 0.22 + wobbleY);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        // 绘制娃娃（兼容旧接口）
+        function drawDoll(ctx, x, y, charIndex, isGrabbed = false, collectProgress = null) {
+            const char = characters[charIndex % characters.length];
+            const baseSize = 24 * char.size;
+            const wobble = time * 0.05 + charIndex * 0.5;
+            drawCharacter(ctx, x, y, baseSize, char, isGrabbed, collectProgress, wobble);
+        }
+
+        // ==========================================
+        // 6. 游戏数据与动态生成
+        // ==========================================
+        function initDolls(count = 10) {
+            const newDolls = [];
+            for (let i = 0; i < count; i++) {
+                let tries = 0;
+                let placed = false;
+                while (!placed && tries < 400) {
+                    // X轴：动态适配屏幕宽度，避开左侧洞口(0-120)
+                    const spawnAreaWidth = Math.max(100, CANVAS_W - 170);
+                    const x = 130 + Math.random() * spawnAreaWidth; 
+                    // Y轴：基于地台高度动态放置
+                    const y = floorY + 20 + Math.random() * 50;
+                    
+                    let overlap = false;
+                    for (let d of newDolls) {
+                        if (Math.hypot(d.x - x, d.y - y) < 50) { overlap = true; break; }
+                    }
+                    if (!overlap) {
+                        newDolls.push({ x, y, charIndex: i % characters.length, wobble: Math.random() * Math.PI * 2 });
+                        placed = true;
+                    }
+                    tries++;
+                }
+                // 保底排列
+                if (!placed) {
+                    newDolls.push({ x: 130 + (i % 5) * 45, y: floorY + 20 + Math.floor(i / 5) * 40, charIndex: i % characters.length, wobble: Math.random() * Math.PI * 2 });
+                }
+            }
+            return newDolls;
+        }
+
+        function resetGame() {
+            dolls = initDolls(15); // 稍微多放一点娃娃，适合宽屏
+            fallingDolls = [];
+            collectingDolls = [];
+            clawX = CANVAS_W / 2; // 置中
+            angle = 0;
+            angleVelocity = 0;
+            ropeLength = MIN_ROPE;
+            currentState = STATE.IDLE;
+            grabSuccess = false;
+            grabbedDoll = null;
+        }
+
+        function updateScore() {
+            SCORE_SPAN.innerText = score;
+        }
+
+        function tryGrab() {
+            if (grabbedDoll !== null) return false;
+            const hookX = clawX + Math.sin(angle) * ropeLength;
+            const hookY = BASE_Y + Math.cos(angle) * ropeLength;
+
+            let closestDist = GRAB_THRESHOLD;
+            let targetIndex = -1;
+            
+            for (let i = 0; i < dolls.length; i++) {
+                const d = dolls[i];
+                const dist = Math.hypot(d.x - hookX, d.y - hookY);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    targetIndex = i;
+                }
+            }
+            if (targetIndex !== -1) {
+                const doll = dolls[targetIndex];
+                grabbedDoll = { charIndex: doll.charIndex, originalX: doll.x, originalY: doll.y };
+                dolls.splice(targetIndex, 1);
+                grabSuccess = true;
+                playGrabSuccessSound(); 
+                return true;
+            }
+            return false;
+        }
+
+        function checkDrop() {
+            if (grabbedDoll === null) return false;
+            // 基础掉落概率 20%，摆动角度越大掉落概率越高
+            let dropProbability = 0.10;
+            dropProbability += (Math.abs(angle) / MAX_ANGLE) * 0.30;
+            // 移动时额外增加掉落概率
+            if (moveDir !== 0) {
+                dropProbability += 0.15;
+            }
+
+            if (Math.random() < dropProbability) {
+                const hookX = clawX + Math.sin(angle) * ropeLength;
+                const hookY = BASE_Y + Math.cos(angle) * ropeLength;
+                fallingDolls.push({
+                    charIndex: grabbedDoll.charIndex,
+                    startX: hookX, startY: hookY + 20,
+                    targetX: grabbedDoll.originalX, targetY: grabbedDoll.originalY,
+                    progress: 0, duration: 25 
+                });
+                grabbedDoll = null;
+                grabSuccess = false;
+                playDropSound();
+                return true;
+            }
+            return false;
+        }
+
+        function updatePhysics() {
+            // 阻尼模型
+            angleVelocity *= 0.96; 
+            angleVelocity -= angle * 0.08; 
+            angle += angleVelocity;
+            
+            if (angle > MAX_ANGLE) {
+                angle = MAX_ANGLE; angleVelocity *= -0.3;
+            } else if (angle < -MAX_ANGLE) {
+                angle = -MAX_ANGLE; angleVelocity *= -0.3;
+            }
+
+            // 处理连续按键/点击移动
+            if (currentState === STATE.IDLE && moveDir !== 0) {
+                const oldX = clawX;
+                if (moveDir === -1) {
+                    clawX = Math.max(MIN_CLAW_X, clawX - 6);
+                    angleVelocity -= (clawX !== oldX) ? 0.015 : 0;
+                } else if (moveDir === 1) {
+                    clawX = Math.min(MAX_CLAW_X, clawX + 6);
+                    angleVelocity += (clawX !== oldX) ? 0.015 : 0;
+                }
+                if (time % 8 === 0 && oldX !== clawX) playMoveSound(); // 降低连续音效频率防爆音
+            }
+        }
+
+        // ==========================================
+        // 7. 状态更新与渲染引擎
+        // ==========================================
+        function updateState() {
+            if (currentState === STATE.LOWERING) {
+                ropeLength += 5; 
+                if (ropeLength > MAX_ROPE) ropeLength = MAX_ROPE;
+                if (tryGrab() || ropeLength >= MAX_ROPE) currentState = STATE.RAISING;
+            } else if (currentState === STATE.RAISING) {
+                if (grabbedDoll !== null) checkDrop(); 
+                ropeLength -= 4; 
+                if (ropeLength <= MIN_ROPE) {
+                    ropeLength = MIN_ROPE;
+                    if (grabbedDoll !== null) {
+                        const hookX = clawX + Math.sin(angle) * ropeLength;
+                        const hookY = BASE_Y + Math.cos(angle) * ropeLength;
+                        collectingDolls.push({
+                            charIndex: grabbedDoll.charIndex,
+                            x: hookX, y: hookY + 20,
+                            progress: 0, duration: 20
+                        });
+                        grabbedDoll = null;
+                        grabSuccess = false;
+                    }
+                    currentState = STATE.IDLE;
+                    grabSuccess = false;
+                }
+            }
+
+            // 动画进度更新
+            for (let i = fallingDolls.length - 1; i >= 0; i--) {
+                const fd = fallingDolls[i];
+                fd.progress += 1 / fd.duration;
+                if (fd.progress >= 1) {
+                    dolls.push({ charIndex: fd.charIndex, x: fd.targetX, y: fd.targetY, wobble: Math.random() * Math.PI * 2 });
+                    fallingDolls.splice(i, 1);
+                }
+            }
+            for (let i = collectingDolls.length - 1; i >= 0; i--) {
+                const cd = collectingDolls[i];
+                cd.progress += 1 / cd.duration;
+                if (cd.progress >= 1) {
+                    score++; updateScore();
+                    collectedDolls.push({ charIndex: cd.charIndex, progress: 0 });
+                    collectingDolls.splice(i, 1);
+                    if (dolls.length < 5) dolls = dolls.concat(initDolls(5));
+                }
+            }
+            for (let i = 0; i < collectedDolls.length; i++) {
+                if (collectedDolls[i].progress < 1) {
+                    collectedDolls[i].progress += 1 / COLLECTED_ANIM_DURATION;
+                    if (collectedDolls[i].progress > 1) collectedDolls[i].progress = 1;
+                }
+            }
+            if (collectedDolls.length > MAX_COLLECTED) collectedDolls.splice(0, collectedDolls.length - MAX_COLLECTED);
+            drawCollectedCanvas();
+        }
+
+        function drawCollectedCanvas() {
+            collectedCtx.clearRect(0, 0, 150, 36);
+            for (let i = 0; i < collectedDolls.length; i++) {
+                const cd = collectedDolls[i];
+                const x = 16 + i * 30;
+                const y = 18;
+                const char = characters[cd.charIndex % characters.length];
+                const scale = 0.35 * Math.min(1, cd.progress * 1.5);
+                collectedCtx.save();
+                collectedCtx.translate(x, y);
+                collectedCtx.scale(scale, scale);
+                drawCharacter(collectedCtx, 0, 0, 20, char, false, null, 0);
+                collectedCtx.restore();
+            }
+        }
+
+        function drawCanvas() {
+            time++;
+            ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+            // 背景光影
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
+            bgGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+            bgGrad.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+            // 动态地台绘制
+            ctx.fillStyle = '#ffb8c6';
+            ctx.fillRect(0, floorY, CANVAS_W, CANVAS_H - floorY);
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.fillRect(0, floorY, CANVAS_W, 10);
+
+            // 绘制出货洞口 (保持左下方)
+            ctx.save();
+            ctx.translate(65, floorY + 40);
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 45, 25, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.strokeStyle = '#d85070';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+            ctx.shadowColor = 'black';
+            ctx.shadowBlur = 15;
+            ctx.shadowInset = true;
+            ctx.restore();
+
+            // 绘制实体
+            for (let doll of dolls) {
+                doll.wobble += 0.02;
+                drawDoll(ctx, doll.x, doll.y, doll.charIndex, false);
+            }
+            for (let fd of fallingDolls) {
+                const t = fd.progress;
+                drawDoll(ctx, fd.startX * (1 - t) + fd.targetX * t, fd.startY * (1 - t) + fd.targetY * t, fd.charIndex, false);
+            }
+            for (let cd of collectingDolls) {
+                drawDoll(ctx, cd.x, cd.y, cd.charIndex, false, cd.progress);
+                ctx.save();
+                ctx.font = 'bold 26px "Segoe UI", sans-serif';
+                ctx.fillStyle = '#FFD700'; ctx.shadowColor = '#FF4500'; ctx.shadowBlur = 10;
+                ctx.fillText('+1', cd.x - 20, cd.y - 40 - cd.progress * 30);
+                ctx.restore();
+            }
+
+            // 绘制机器爪
+            ctx.save();
+            ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 4;
+            ctx.fillStyle = '#DDA0DD'; 
+            ctx.fillRect(15, BASE_Y - 25, CANVAS_W - 30, 12); // 横梁贯穿全屏
+            ctx.fillStyle = '#EE82EE'; 
+            ctx.fillRect(15, BASE_Y - 20, CANVAS_W - 30, 4);
+
+            ctx.fillStyle = '#BA55D3';
+            ctx.beginPath();
+            ctx.roundRect ? ctx.roundRect(clawX - 20, BASE_Y - 30, 40, 22, 10) : ctx.fillRect(clawX - 20, BASE_Y - 30, 40, 22);
+            ctx.fill();
+
+            const hookX = clawX + Math.sin(angle) * ropeLength;
+            const hookY = BASE_Y + Math.cos(angle) * ropeLength;
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
+            ctx.moveTo(clawX, BASE_Y - 10); ctx.lineTo(hookX, hookY);
+            ctx.stroke();
+
+            ctx.fillStyle = '#9370DB';
+            ctx.beginPath(); ctx.ellipse(hookX, hookY, 12, 10, 0, 0, 2*Math.PI); ctx.fill();
+
+            const isClosed = grabSuccess || (grabbedDoll !== null);
+            const clawAngles = [-0.6, 0, 0.6];
+            for (let i = 0; i < 3; i++) {
+                let offset = clawAngles[i];
+                offset *= isClosed ? 0.3 : 1.2; 
+                const toothAngle = angle + offset;
+                const toothLen = 22;
+                const tipX = hookX + Math.sin(toothAngle) * toothLen;
+                const tipY = hookY + Math.cos(toothAngle) * toothLen;
+                ctx.beginPath(); ctx.moveTo(hookX, hookY); ctx.lineTo(tipX, tipY);
+                ctx.lineWidth = 6; ctx.strokeStyle = '#D8BFD8'; ctx.stroke();
+                ctx.beginPath(); ctx.arc(tipX, tipY, 5, 0, 2*Math.PI);
+                ctx.fillStyle = '#FFF'; ctx.fill();
+            }
+            ctx.restore();
+
+            if (grabbedDoll !== null) {
+                drawDoll(ctx, hookX, hookY + 20, grabbedDoll.charIndex, true);
+            }
+
+            // 玻璃反光适配全屏
+            ctx.save();
+            ctx.globalAlpha = 0.15;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.moveTo(CANVAS_W * 0.1, 0); ctx.lineTo(CANVAS_W * 0.4, 0);
+            ctx.lineTo(CANVAS_W * 0.2, CANVAS_H); ctx.lineTo(0, CANVAS_H);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // ==========================================
+        // 8. 用户交互处理 (支持长按与松开检测)
+        // ==========================================
+        function isIdle() { return currentState === STATE.IDLE; }
+
+        // 事件监听绑定
+        document.getElementById('moveLeftBtn').addEventListener('pointerdown', () => moveDir = -1);
+        document.getElementById('moveRightBtn').addEventListener('pointerdown', () => moveDir = 1);
+        
+        // 松开手指时停止移动
+        window.addEventListener('pointerup', () => moveDir = 0);
+        window.addEventListener('pointercancel', () => moveDir = 0);
+
+        document.getElementById('grabBtn').addEventListener('pointerdown', () => {
+            if (!isIdle()) return;
+            if (ropeLength > MIN_ROPE + 2) ropeLength = MIN_ROPE;
+            currentState = STATE.LOWERING;
+            grabSuccess = false;
+            moveDir = 0; // 抓取时停止横移
+        });
+        
+        document.getElementById('resetBtn').addEventListener('pointerdown', () => { resetGame(); });
+
+        window.addEventListener('keydown', (e) => {
+            if ([' ', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
+            if (!isIdle()) return;
+            if (e.key === 'ArrowLeft') moveDir = -1;
+            else if (e.key === 'ArrowRight') moveDir = 1;
+            else if (e.key === ' ') {
+                currentState = STATE.LOWERING;
+                grabSuccess = false;
+                moveDir = 0;
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' && moveDir === -1) moveDir = 0;
+            if (e.key === 'ArrowRight' && moveDir === 1) moveDir = 0;
+        });
+
+        // ==========================================
+        // 9. 启动流程
+        // ==========================================
+        // 必须先计算屏幕尺寸，然后再生成游戏对象
+        resizeCanvas(); 
+        resetGame();
+
+        function gameLoop() {
+            updatePhysics();
+            updateState();
+            drawCanvas();
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+    })();
+</script>
+</body>
+</html>
